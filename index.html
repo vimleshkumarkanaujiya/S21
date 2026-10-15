@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@100..900&display=swap" rel="stylesheet" />
+        <title>H-DC Colormap</title>
+        <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+        <style>
+            :root {
+                color-scheme: dark;
+                --bg: #0b1020;
+                --panel: #121a2d;
+                --panel2: #18233a;
+                --line: #293652;
+                --text: #e8eefc;
+                --muted: #9aabc9;
+                --accent: #73a7ff;
+                --good: #43d9a3;
+                --bad: #ff7387;
+                --warn: #ffc96b;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                background: radial-gradient(ellipse at top, #152447 0, var(--bg) 55%);
+                color: var(--text);
+                font:
+                    14px/1.45 Inter,
+                    ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    Segoe UI,
+                    sans-serif;
+            }
+            button,
+            input,
+            select {
+                font: inherit;
+            }
+            button {
+                cursor: pointer;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                padding: 9px 13px;
+                background: var(--panel2);
+                color: var(--text);
+                transition: 0.15s;
+            }
+            button:hover {
+                border-color: var(--accent);
+                transform: translateY(-1px);
+            }
+            button.primary {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #071226;
+                font-weight: 700;
+            }
+            button:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+                transform: none;
+            }
+            .app {
+                max-width: 1500px;
+                margin: auto;
+                padding: 26px;
+            }
+            .top {
+                display: flex;
+                justify-content: space-between;
+                gap: 20px;
+                align-items: center;
+                margin-bottom: 22px;
+            }
+            .eyebrow {
+                color: var(--accent);
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+            }
+            .top h1 {
+                font-size: clamp(25px, 3vw, 38px);
+                letter-spacing: -0.04em;
+                margin: 5px 0;
+            }
+            .sub {
+                color: var(--muted);
+                max-width: 720px;
+            }
+            .chip {
+                border: 1px solid var(--line);
+                padding: 7px 11px;
+                border-radius: 99px;
+                color: var(--muted);
+                white-space: nowrap;
+            }
+            .layout {
+                display: grid;
+                grid-template-columns: 320px minmax(0, 1fr);
+                gap: 18px;
+            }
+            .panel {
+                background: linear-gradient(180deg, rgba(20, 29, 49, 0.97), rgba(15, 23, 40, 0.97));
+                border: 1px solid var(--line);
+                border-radius: 17px;
+                padding: 18px;
+                min-width: 0;
+                box-shadow: 0 15px 50px #0002;
+            }
+            .panel h2 {
+                font-size: 15px;
+                margin: 0 0 14px;
+                letter-spacing: -0.01em;
+            }
+            .section {
+                padding-bottom: 18px;
+                margin-bottom: 18px;
+                border-bottom: 1px solid var(--line);
+            }
+            .section:last-child {
+                border: 0;
+                padding: 0;
+                margin: 0;
+            }
+            .drop {
+                border: 1px dashed #47618a;
+                border-radius: 13px;
+                padding: 20px 14px;
+                text-align: center;
+                background: #101a2d;
+                cursor: pointer;
+            }
+            .drop:hover,
+            .drop.drag {
+                border-color: var(--accent);
+                background: #172744;
+            }
+            .drop strong {
+                display: block;
+                margin: 7px 0;
+            }
+            .drop small,
+            .hint {
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .file {
+                margin-top: 10px;
+                color: var(--good);
+                font-size: 12px;
+                overflow-wrap: anywhere;
+            }
+            .fields {
+                display: inline;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .field label {
+                display: block;
+                color: var(--muted);
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+            .field input,
+            .field select {
+                width: 100%;
+                background: #0b1324;
+                color: var(--text);
+                border: 1px solid var(--line);
+                border-radius: 9px;
+                padding: 10px;
+                outline: none;
+            }
+            .field input:focus,
+            .field select:focus {
+                border-color: var(--accent);
+            }
+            .controls {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-top: 12px;
+            }
+            .current {
+                margin-top: 12px;
+                padding: 12px;
+                background: #0c1527;
+                border-radius: 11px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .current strong {
+                font-size: 20px;
+            }
+            .current span {
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .statgrid {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+            .stat {
+                background: #111a2c;
+                border: 1px solid var(--line);
+                padding: 12px;
+                border-radius: 12px;
+                min-width: 0;
+            }
+            .stat small {
+                display: block;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .stat strong {
+                display: block;
+                font-size: 20px;
+                margin-top: 4px;
+                overflow-wrap: anywhere;
+            }
+            .stat strong.bad {
+                color: var(--bad);
+            }
+            .stat strong.good {
+                color: var(--good);
+            }
+            .plothead {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 8px;
+            }
+            .plothead h2 {
+                margin: 0;
+            }
+            .plot-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .plot {
+                width: 100%;
+                height: min(66vh, 680px);
+                min-height: 390px;
+            }
+            .empty {
+                height: 100%;
+                min-height: 390px;
+                display: grid;
+                place-items: center;
+                text-align: center;
+                color: var(--muted);
+                border: 1px dashed var(--line);
+                border-radius: 12px;
+                padding: 30px;
+            }
+            .empty strong {
+                color: var(--text);
+                display: block;
+                font-size: 17px;
+                margin-bottom: 6px;
+            }
+            .tablewrap {
+                max-height: 240px;
+                overflow: auto;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                margin-top: 12px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12px;
+            }
+            th,
+            td {
+                text-align: left;
+                padding: 9px 11px;
+                border-bottom: 1px solid var(--line);
+            }
+            th {
+                position: sticky;
+                top: 0;
+                background: #17233a;
+                color: var(--muted);
+                z-index: 1;
+            }
+            tr:last-child td {
+                border: 0;
+            }
+            .tag {
+                display: inline-block;
+                padding: 3px 7px;
+                border-radius: 99px;
+                font-size: 11px;
+            }
+            .tag.ok {
+                color: var(--good);
+                background: #14372f;
+            }
+            .tag.miss {
+                color: var(--bad);
+                background: #3a202c;
+            }
+            .tag.extra {
+                color: var(--warn);
+                background: #3a3020;
+            }
+            .message {
+                margin-top: 10px;
+                padding: 10px 12px;
+                border-radius: 9px;
+                background: #18243a;
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .message.warn {
+                color: var(--warn);
+            }
+            .footer {
+                color: var(--muted);
+                font-size: 11px;
+                margin-top: 14px;
+            }
+            .hidden {
+                display: none !important;
+            }
+            @media (max-width: 900px) {
+                .app {
+                    padding: 14px;
+                }
+                .layout {
+                    grid-template-columns: 1fr;
+                }
+                .statgrid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .top {
+                    align-items: flex-start;
+                    flex-direction: column;
+                }
+                .plot {
+                    height: 480px;
+                }
+            }
+            @media (max-width: 480px) {
+                .fields {
+                    grid-template-columns: 1fr 1fr;
+                }
+                .panel {
+                    padding: 13px;
+                }
+                .plot {
+                    min-height: 360px;
+                    height: 420px;
+                }
+                .stat strong {
+                    font-size: 17px;
+                }
+            }
+
+            /* Light mode + Raleway typography */
+            :root {
+                color-scheme: light;
+                --bg: #f4f7fb;
+                --panel: #ffffff;
+                --panel2: #eef3fa;
+                --line: #d8e0ec;
+                --text: #172033;
+                --muted: #66748a;
+                --accent: #3978e8;
+                --good: #13845d;
+                --bad: #d73550;
+                --warn: #a96800;
+            }
+            body {
+                background: linear-gradient(180deg, #f8faff 0%, #eef3f9 100%);
+                color: var(--text);
+                font-family:
+                    "Raleway",
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    sans-serif;
+            }
+            button,
+            input,
+            select {
+                font-family:
+                    "Raleway",
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    sans-serif;
+            }
+            button {
+                background: #fff;
+                color: var(--text);
+                border-color: #d5deeb;
+            }
+            button:hover {
+                background: #f2f6fd;
+                border-color: var(--accent);
+            }
+            button.primary {
+                background: #3978e8;
+                border-color: #3978e8;
+                color: #fff;
+            }
+            .panel {
+                background: #fff;
+                border-color: #dbe3ef;
+                box-shadow: 0 10px 30px rgba(31, 54, 88, 0.07);
+            }
+            .drop {
+                background: #f8fbff;
+                border-color: #b7c7df;
+            }
+            .drop:hover,
+            .drop.drag {
+                background: #edf4ff;
+            }
+            .field input,
+            .field select {
+                background: #fff;
+                color: var(--text);
+                border-color: #d3ddeb;
+            }
+            .field input:focus,
+            .field select:focus {
+                border-color: var(--accent);
+            }
+            .current {
+                background: #f1f5fb;
+            }
+            .stat {
+                background: #f8faff;
+                border-color: #dfe6f0;
+            }
+            .message {
+                background: #f0f5fc;
+                color: #52627a;
+            }
+            .message.warn {
+                color: #8a5700;
+                background: #fff7e8;
+            }
+            th {
+                background: #edf2f9;
+                color: #52627a;
+            }
+            .tag.ok {
+                color: #116b4c;
+                background: #e0f5eb;
+            }
+            .tag.miss {
+                color: #b4233b;
+                background: #fde8ec;
+            }
+            .tag.extra {
+                color: #875300;
+                background: #fff1d6;
+            }
+            .chip {
+                border-color: #d5deeb;
+                color: #5d6c82;
+            }
+            .plot {
+                background: #fff;
+            }
+
+            /* FORCE LIGHT THEME: no dark-mode styling */
+            :root {
+                color-scheme: light !important;
+                --bg: #f5f7fb !important;
+                --panel: #ffffff !important;
+                --panel2: #eef3fa !important;
+                --line: #d8e0ec !important;
+                --text: #172033 !important;
+                --muted: #66748a !important;
+                --accent: #3978e8 !important;
+                --good: #13845d !important;
+                --bad: #d73550 !important;
+                --warn: #a96800 !important;
+            }
+            html,
+            body {
+                background: #f5f7fb !important;
+                color: #172033 !important;
+                font-family: "Raleway", sans-serif !important;
+                color-scheme: light !important;
+            }
+            body {
+                background: linear-gradient(180deg, #fbfcff 0%, #f0f4fa 100%) !important;
+            }
+            button,
+            input,
+            select,
+            textarea {
+                font-family: "Raleway", sans-serif !important;
+                color: #172033 !important;
+                color-scheme: light !important;
+            }
+            button {
+                background: #fff !important;
+                color: #172033 !important;
+                border-color: #d5deeb !important;
+            }
+            button:hover {
+                background: #f2f6fd !important;
+            }
+            button.primary {
+                background: #3978e8 !important;
+                color: #fff !important;
+                border-color: #3978e8 !important;
+            }
+            .panel,
+            .stat,
+            .current,
+            .message,
+            .drop,
+            .field input,
+            .field select,
+            .tablewrap {
+                background-color: #fff !important;
+                color: #172033 !important;
+            }
+            .panel {
+                background: #fff !important;
+                border-color: #dbe3ef !important;
+                box-shadow: 0 10px 30px rgba(31, 54, 88, 0.07) !important;
+            }
+            .drop {
+                background: #f8fbff !important;
+                border-color: #b7c7df !important;
+            }
+            .drop:hover,
+            .drop.drag {
+                background: #edf4ff !important;
+            }
+            .field label,
+            .hint,
+            .sub,
+            .chip,
+            .stat small,
+            .current span,
+            .footer {
+                color: #66748a !important;
+            }
+            .current,
+            .stat {
+                background: #f8faff !important;
+                border-color: #dfe6f0 !important;
+            }
+            .message {
+                background: #f0f5fc !important;
+                color: #52627a !important;
+            }
+            .message.warn {
+                background: #fff7e8 !important;
+                color: #8a5700 !important;
+            }
+            th {
+                background: #edf2f9 !important;
+                color: #52627a !important;
+            }
+            .tag.ok {
+                background: #e0f5eb !important;
+                color: #116b4c !important;
+            }
+            .tag.miss {
+                background: #fde8ec !important;
+                color: #b4233b !important;
+            }
+            .tag.extra {
+                background: #fff1d6 !important;
+                color: #875300 !important;
+            }
+            #plot {
+                background: #fff !important;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="app">
+            <header class="top">
+                <div>
+                    <div class="eyebrow">Scientific Data Visualization</div>
+                    <h1>H-DC Colormap</h1>
+                    <div class="sub">
+                        Explore S21 magnitude against magnetic field and frequency. Upload an ASCII file, validate the
+                        H-DC sweep, and tune the color scale.
+                    </div>
+                </div>
+            </header>
+            <div class="layout">
+                <aside class="panel">
+                    <section class="section">
+                        <h2>01 / Measurement file</h2>
+                        <div class="drop" id="drop">
+                            <div style="font-size: 25px">⇧</div>
+                            <strong>Drop ASCII file here</strong><small>or click to browse · .txt .dat .asc</small
+                            ><input id="file" type="file" accept=".txt,.dat,.asc,.csv,.out,text/plain" hidden />
+                        </div>
+                        <div class="file" id="filename">No file selected</div>
+                        <div class="hint" style="margin-top: 8px">
+                            Expected format: <code>#Parameters = {Hdc=500; ...}</code> followed by frequency and S21
+                            columns.
+                        </div>
+                        <div class="controls"><button id="clear">Clear file</button></div>
+                    </section>
+                    <section class="section">
+                        <h2>02 / H-DC sweep validation</h2>
+                        <div class="fields">
+                            <div class="field">
+                                <label for="minH">Minimum H-DC</label
+                                ><input id="minH" type="number" value="500" step="any" disabled />
+                            </div>
+                            <div class="field">
+                                <label for="maxH">Maximum H-DC</label
+                                ><input id="maxH" type="number" value="600" step="any" disabled />
+                            </div>
+                            <div class="field">
+                                <label for="stepH">Detected step width (from file)</label
+                                ><input id="stepH" type="number" value="—" step="any" readonly />
+                                <div class="hint">Automatically inferred from H-DC values</div>
+                            </div>
+                            <div class="field">
+                                <label for="tol">Matching tolerance</label
+                                ><input id="tol" type="number" value="0.001" min="0" step="any" />
+                            </div>
+                        </div>
+                        <div class="controls">
+                            <button class="primary" id="validate">Check all steps</button
+                            ><button id="useFileRange">Use file range</button>
+                        </div>
+                        <div class="current">
+                            <div><span>Selected H-DC</span><br /><strong id="currentH">— Oe</strong></div>
+                            <span id="hIndex">No sweep loaded</span>
+                        </div>
+                        <div class="controls">
+                            <button id="prev" disabled>← Previous</button><button id="next" disabled>Next →</button>
+                        </div>
+                        <div id="validationMessage" class="message">Upload an ASCII measurement file to begin.</div>
+                        <div class="tablewrap hidden" id="validationTableWrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Expected H-DC (Oe)</th>
+                                        <th>Status</th>
+                                        <th>Nearest actual</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="validationRows"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                    <section class="section">
+                        <h2>03 / Colormap appearance</h2>
+                        <div class="field">
+                            <label for="cmap">Color theme</label
+                            ><select id="cmap">
+                                <option value="Jet">Jet (original)</option>
+                                <option value="Viridis">Viridis</option>
+                                <option value="Plasma">Plasma</option>
+                                <option value="Inferno">Inferno</option>
+                                <option value="Magma">Magma</option>
+                                <option value="Cividis">Cividis</option>
+                                <option value="Turbo">Turbo</option>
+                                <option value="RdBu">Red–Blue</option>
+                                <option value="Portland">Portland</option>
+                                <option value="Picnic">Picnic</option>
+                                <option value="Hot">Hot</option>
+                                <option value="Greys">Greys</option>
+                            </select>
+                        </div>
+                        <div class="fields" style="margin-top: 10px">
+                            <div class="field">
+                                <label for="zmin">S21 color minimum (dB)</label
+                                ><input id="zmin" type="number" step="any" placeholder="Auto" />
+                            </div>
+                            <div class="field">
+                                <label for="zmax">S21 color maximum (dB)</label
+                                ><input id="zmax" type="number" step="any" placeholder="Auto" />
+                            </div>
+                        </div>
+                        <div class="controls">
+                            <button id="autoScale">Reset color limits</button
+                            ><button id="redraw">Apply settings</button>
+                        </div>
+                    </section>
+                    <section>
+                        <h2>04 / Export</h2>
+                        <div class="controls">
+                            <button id="exportCsv">Export H-DC audit CSV</button
+                            ><button id="exportPng">Save plot PNG</button>
+                            <button id="exportSvg">Export plot SVG</button>
+                        </div>
+                        <div class="footer">
+                            “Explore the unknown. Visualize the invisible. Discover the extraordinary.”
+                        </div>
+                    </section>
+                </aside>
+                <section class="panel">
+                    <div class="statgrid">
+                        <div class="stat"><small>Data points</small><strong id="nPoints">—</strong></div>
+                        <div class="stat"><small>Unique H-DC</small><strong id="nHdc">—</strong></div>
+                        <div class="stat"><small>Missing steps</small><strong id="nMissing" class="bad">—</strong></div>
+                        <div class="stat">
+                            <small>Frequency range</small><strong id="freqRange" style="font-size: 15px">—</strong>
+                        </div>
+                    </div>
+                    <div class="plothead">
+                        <h2>S21 magnitude map</h2>
+                        <div class="plot-actions">
+                            <button id="panLeft" title="Move view left">←</button
+                            ><button id="panRight" title="Move view right">→</button
+                            ><button id="panUp" title="Move view up">↑</button
+                            ><button id="panDown" title="Move view down">↓</button
+                            ><button id="resetView" title="Reset full plot view">Reset view</button
+                            ><button id="showRaw">Raw points</button
+                            ><button id="showInterpolated" class="primary">Interpolated</button>
+                        </div>
+                    </div>
+                    <div id="plot">
+                        <div class="empty">
+                            <div>
+                                <strong>Your colormap will appear here</strong>Upload a measurement file to preview the
+                                controls.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message" id="plotNote">Axes: H-DC (Oe) × Frequency (GHz) · color: S21 (dB).</div>
+                    <div class="footer">
+                        Interpolation note: the map is built from the measured H-DC × frequency grid and uses bilinear
+                        interpolation only where the four surrounding measurements exist. Missing cells are left blank
+                        rather than filled with guessed values.
+                    </div>
+                </section>
+            </div>
+        </main>
+        <script>
+            const $ = (id) => document.getElementById(id);
+            let data = [],
+                uniqueH = [],
+                audit = [],
+                plotMode = "interpolated",
+                loadedName = "",
+                fileMinH = null,
+                fileMaxH = null;
+            const fmt = (n, d = 6) => Number(n).toLocaleString("en-US", { maximumFractionDigits: d });
+            function parseText(text) {
+                let rows = [],
+                    currentH = null;
+                for (const raw of text.split(/\r?\n/)) {
+                    const line = raw.trim();
+                    if (!line) continue;
+                    const hm = line.match(/\bHdc\s*=\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)/i);
+                    if (hm) {
+                        currentH = Number(hm[1]);
+                        continue;
+                    }
+                    if (currentH === null || line.startsWith("#") || line.startsWith("!") || line.startsWith("//"))
+                        continue;
+                    const parts = line.split(/[\s,;]+/).filter(Boolean);
+                    if (parts.length < 2) continue;
+                    const f = Number(parts[0]),
+                        s = Number(parts[1]);
+                    if (Number.isFinite(f) && Number.isFinite(s)) rows.push({ h: currentH, f, s });
+                }
+                return rows;
+            }
+            function inferStepWidth(values) {
+                const vals = [...new Set(values)].sort((a, b) => a - b);
+                if (vals.length < 2) return null;
+                // Quantize to 1e-4 Oe to suppress floating-point representation noise,
+                // then use the integer GCD of all adjacent differences. This recovers a
+                // base step even when some intermediate H-DC sweeps are missing.
+                const scale = 10000;
+                const ints = vals.map((v) => Math.round(v * scale));
+                const diffs = [];
+                for (let i = 1; i < ints.length; i++) {
+                    const d = ints[i] - ints[i - 1];
+                    if (d > 0) diffs.push(d);
+                }
+                const gcd = (a, b) => {
+                    while (b) {
+                        const t = a % b;
+                        a = b;
+                        b = t;
+                    }
+                    return a;
+                };
+                let g = diffs[0] || 0;
+                for (let i = 1; i < diffs.length && g > 1; i++) g = gcd(g, diffs[i]);
+                const step = g / scale;
+                return Number.isFinite(step) && step > 0 ? step : null;
+            }
+            function loadRows(rows, name) {
+                data = rows.filter((p) => Number.isFinite(p.h) && Number.isFinite(p.f) && Number.isFinite(p.s));
+                loadedName = name;
+                uniqueH = [...new Set(data.map((p) => p.h))].sort((a, b) => a - b);
+                const inferredStep = inferStepWidth(uniqueH);
+                $("stepH").value = inferredStep === null ? "" : String(Number(inferredStep.toFixed(8)));
+                $("filename").textContent = `${name} · ${data.length.toLocaleString()} valid data points`;
+                $("nPoints").textContent = data.length.toLocaleString();
+                $("nHdc").textContent = uniqueH.length;
+                let fMin = Infinity,
+                    fMax = -Infinity;
+                for (const p of data) {
+                    if (p.f < fMin) fMin = p.f;
+                    if (p.f > fMax) fMax = p.f;
+                }
+                $("freqRange").textContent = data.length ? `${fmt(fMin, 4)}–${fmt(fMax, 4)}` : "—";
+                if (uniqueH.length) {
+                    fileMinH = uniqueH[0];
+                    fileMaxH = uniqueH[uniqueH.length - 1];
+                    for (const id of ["minH", "maxH"]) {
+                        $(id).min = String(fileMinH);
+                        $(id).max = String(fileMaxH);
+                        $(id).disabled = false;
+                    }
+                    $("minH").value = fileMinH;
+                    $("maxH").value = fileMaxH;
+                    $("currentH").textContent = `${fmt(uniqueH[0])} Oe`;
+                    $("hIndex").textContent = `1 of ${uniqueH.length}`;
+                    $("prev").disabled = true;
+                    $("next").disabled = uniqueH.length < 2;
+                    selectH(0);
+                } else {
+                    $("currentH").textContent = "— Oe";
+                    $("hIndex").textContent = "No sweep loaded";
+                }
+                audit = [];
+                validate();
+                draw();
+            }
+            function validate() {
+                if (!data.length) {
+                    $("validationMessage").textContent = "Upload an ASCII measurement file to begin.";
+                    $("nMissing").textContent = "—";
+                    $("validationTableWrap").classList.add("hidden");
+                    return;
+                }
+                const min = Number($("minH").value),
+                    max = Number($("maxH").value),
+                    step = Number($("stepH").value),
+                    tol = Math.max(0, Number($("tol").value) || 0);
+                if (
+                    !Number.isFinite(min) ||
+                    !Number.isFinite(max) ||
+                    !Number.isFinite(step) ||
+                    step <= 0 ||
+                    max < min ||
+                    (fileMinH !== null && (min < fileMinH || max > fileMaxH))
+                ) {
+                    $("validationMessage").textContent =
+                        `Enter a valid range within the uploaded file bounds (${fmt(fileMinH)} to ${fmt(fileMaxH)} Oe) and a positive step width; maximum must be ≥ minimum.`;
+                    $("validationMessage").classList.add("warn");
+                    return;
+                }
+                const count = Math.floor((max - min) / step + 1e-9) + 1;
+                if (count > 10000) {
+                    $("validationMessage").textContent =
+                        "That range creates more than 10,000 expected steps. Increase the step width or narrow the range.";
+                    $("validationMessage").classList.add("warn");
+                    return;
+                }
+                const expected = Array.from({ length: count }, (_, i) => min + i * step);
+                const actual = uniqueH.filter((a) => a >= min - tol && a <= max + tol);
+                const matchedActual = new Set();
+                audit = expected.map((e) => {
+                    let nearest = null,
+                        dist = Infinity;
+                    actual.forEach((a) => {
+                        const d = Math.abs(a - e);
+                        if (d < dist) {
+                            dist = d;
+                            nearest = a;
+                        }
+                    });
+                    const present = dist <= tol;
+                    if (present) matchedActual.add(nearest);
+                    return {
+                        expected: e,
+                        status: present ? "Present" : "Missing",
+                        nearest: nearest === null ? null : dist <= tol ? nearest : nearest,
+                        distance: dist,
+                    };
+                });
+                const missing = audit.filter((x) => x.status === "Missing");
+                const extras = actual.filter((a) => !expected.some((e) => Math.abs(e - a) <= tol));
+                $("nMissing").textContent = missing.length;
+                $("nMissing").className = missing.length ? "bad" : "good";
+                $("validationMessage").classList.toggle("warn", missing.length > 0 || extras.length > 0);
+                $("validationMessage").textContent =
+                    `${expected.length} expected steps · ${expected.length - missing.length} present · ${missing.length} missing · ${extras.length} in-range value(s) outside the expected sequence.` +
+                    (extras.length ? ` Unexpected H-DC: ${extras.map((x) => fmt(x)).join(", ")}.` : "");
+                $("validationTableWrap").classList.remove("hidden");
+                $("validationRows").innerHTML = audit
+                    .map(
+                        (a) =>
+                            `<tr><td>${fmt(a.expected)}</td><td><span class="tag ${a.status === "Present" ? "ok" : "miss"}">${a.status}</span></td><td>${a.nearest === null ? "—" : fmt(a.nearest) + (a.distance > tol ? " (outside tolerance)" : "")}</td></tr>`
+                    )
+                    .join("");
+            }
+            function gridData() {
+                // Build a structured Hdc × frequency matrix from the actual measurements.
+                // This avoids IDW smoothing artifacts and never invents values in incomplete cells.
+                const hs = uniqueH;
+                const fs = [...new Set(data.map((p) => p.f))].sort((a, b) => a - b);
+                const nx = 500,
+                    ny = 500;
+                if (hs.length < 2 || fs.length < 2) return { x: hs, y: fs, z: fs.map(() => hs.map(() => null)) };
+                const hIndex = new Map(hs.map((v, i) => [v, i]));
+                const fIndex = new Map(fs.map((v, i) => [v, i]));
+                const sums = Array.from({ length: fs.length }, () => Array(hs.length).fill(0));
+                const counts = Array.from({ length: fs.length }, () => Array(hs.length).fill(0));
+                for (const p of data) {
+                    const i = hIndex.get(p.h),
+                        j = fIndex.get(p.f);
+                    if (i === undefined || j === undefined) continue;
+                    sums[j][i] += p.s;
+                    counts[j][i]++;
+                }
+                const base = fs.map((_, j) => hs.map((_, i) => (counts[j][i] ? sums[j][i] / counts[j][i] : null)));
+                const xs = Array.from({ length: nx }, (_, i) => hs[0] + ((hs[hs.length - 1] - hs[0]) * i) / (nx - 1));
+                const ys = Array.from({ length: ny }, (_, i) => fs[0] + ((fs[fs.length - 1] - fs[0]) * i) / (ny - 1));
+                function bracket(values, v) {
+                    if (v < values[0] || v > values[values.length - 1]) return -1;
+                    let lo = 0,
+                        hi = values.length - 1;
+                    while (lo + 1 < hi) {
+                        const mid = (lo + hi) >> 1;
+                        if (values[mid] <= v) lo = mid;
+                        else hi = mid;
+                    }
+                    if (v === values[values.length - 1]) return values.length - 2;
+                    return lo;
+                }
+                const z = ys.map((f) => {
+                    const j = bracket(fs, f);
+                    if (j < 0) return xs.map(() => null);
+                    const fy = (f - fs[j]) / (fs[j + 1] - fs[j]);
+                    return xs.map((h) => {
+                        const i = bracket(hs, h);
+                        if (i < 0) return null;
+                        const q00 = base[j][i],
+                            q10 = base[j][i + 1],
+                            q01 = base[j + 1][i],
+                            q11 = base[j + 1][i + 1];
+                        if ([q00, q10, q01, q11].some((v) => v === null || !Number.isFinite(v))) return null;
+                        const fx = (h - hs[i]) / (hs[i + 1] - hs[i]);
+                        return q00 * (1 - fx) * (1 - fy) + q10 * fx * (1 - fy) + q01 * (1 - fx) * fy + q11 * fx * fy;
+                    });
+                });
+                return { x: xs, y: ys, z };
+            }
+            function draw() {
+                if (!data.length) return;
+                if (typeof Plotly === "undefined") {
+                    $("plot").innerHTML =
+                        '<div class="empty"><div><strong>Plot library unavailable</strong>Connect to the internet to load Plotly.js, then refresh this page.</div></div>';
+                    return;
+                }
+                const cmap = $("cmap").value;
+                let traces = [];
+                if (plotMode === "raw") {
+                    traces = [
+                        {
+                            type: "scattergl",
+                            mode: "markers",
+                            x: data.map((p) => p.h),
+                            y: data.map((p) => p.f),
+                            marker: {
+                                size: 5,
+                                color: data.map((p) => p.s),
+                                colorscale: cmap,
+                                showscale: true,
+                                colorbar: { title: "S21 (dB)" },
+                                cmin: $("zmin").value === "" ? undefined : Number($("zmin").value),
+                                cmax: $("zmax").value === "" ? undefined : Number($("zmax").value),
+                            },
+                            customdata: data.map((p) => p.s),
+                            hovertemplate:
+                                "H-DC: %{x} Oe<br>Frequency: %{y} GHz<br>S21: %{marker.color:.3f} dB<extra></extra>",
+                        },
+                    ];
+                } else {
+                    const g = gridData();
+                    traces = [
+                        {
+                            type: "heatmap",
+                            x: g.x,
+                            y: g.y,
+                            z: g.z,
+                            colorscale: cmap,
+                            zmin: $("zmin").value === "" ? undefined : Number($("zmin").value),
+                            zmax: $("zmax").value === "" ? undefined : Number($("zmax").value),
+                            colorbar: { title: "S21 (dB)" },
+                            hovertemplate:
+                                "H-DC: %{x:.4f} Oe<br>Frequency: %{y:.6f} GHz<br>S21: %{z:.3f} dB<extra></extra>",
+                            connectgaps: false,
+                        },
+                    ];
+                }
+                const layout = {
+                    paper_bgcolor: "rgba(0,0,0,0)",
+                    plot_bgcolor: "#ffffff",
+                    paper_bgcolor: "#ffffff",
+                    font: { color: "#172033", family: "Raleway,system-ui,sans-serif" },
+                    margin: { l: 75, r: 25, t: 24, b: 65 },
+                    xaxis: { title: "Hdc (Oe)", gridcolor: "#e1e7f0", zerolinecolor: "#cbd5e1" },
+                    yaxis: { title: "Frequency (GHz)", gridcolor: "#e1e7f0", zerolinecolor: "#cbd5e1" },
+                    hovermode: "closest",
+                    dragmode: false,
+                };
+                Plotly.react("plot", traces, layout, {
+                    responsive: true,
+                    displaylogo: false,
+                    scrollZoom: false,
+                    doubleClick: false,
+                    modeBarButtonsToRemove: ["zoom2d", "pan2d", "select2d", "lasso2d"],
+                    toImageButtonOptions: { format: "png", filename: "HDC_S21_colormap", scale: 2 },
+                });
+                $("plotNote").textContent =
+                    plotMode === "raw"
+                        ? "Raw measured points · axes: H-DC (Oe) × Frequency (GHz) · color: S21 (dB)."
+                        : "Bilinearly interpolated measured grid · H-DC (Oe) × Frequency (GHz) · color: S21 (dB). Missing grid cells remain blank.";
+            }
+            $("drop").addEventListener("click", () => $("file").click());
+            $("file").addEventListener("change", async (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                try {
+                    const contents = await f.text();
+                    if (!contents.trim()) throw Error("The selected file is empty.");
+                    const rows = parseText(contents);
+                    if (!rows.length)
+                        throw Error(
+                            "No numeric rows found. Check that Hdc=... parameter lines precede frequency/S21 rows."
+                        );
+                    loadRows(rows, f.name);
+                } catch (err) {
+                    $("filename").textContent = "Could not parse file: " + err.message;
+                }
+            });
+            ["dragover", "dragenter"].forEach((ev) =>
+                $("drop").addEventListener(ev, (e) => {
+                    e.preventDefault();
+                    $("drop").classList.add("drag");
+                })
+            );
+            ["dragleave", "drop"].forEach((ev) =>
+                $("drop").addEventListener(ev, (e) => {
+                    e.preventDefault();
+                    $("drop").classList.remove("drag");
+                })
+            );
+            $("drop").addEventListener("drop", async (e) => {
+                const f = e.dataTransfer.files[0];
+                if (!f) return;
+                try {
+                    const rows = parseText(await f.text());
+                    if (rows.length) loadRows(rows, f.name);
+                    else
+                        $("filename").textContent =
+                            "No readable Hdc/frequency/S21 rows found. Check the Hdc parameter lines and numeric columns.";
+                } catch (err) {
+                    $("filename").textContent = "Could not parse file: " + (err?.message || String(err));
+                }
+            });
+            $("clear").onclick = () => {
+                data = [];
+                uniqueH = [];
+                audit = [];
+                fileMinH = null;
+                fileMaxH = null;
+                for (const id of ["minH", "maxH"]) {
+                    $(id).removeAttribute("min");
+                    $(id).removeAttribute("max");
+                    $(id).disabled = true;
+                }
+                $("file").value = "";
+                $("stepH").value = "";
+                $("filename").textContent = "No file selected";
+                ["nPoints", "nHdc", "freqRange", "nMissing"].forEach((id) => ($(id).textContent = "—"));
+                $("plot").innerHTML =
+                    '<div class="empty"><div><strong>Your colormap will appear here</strong>Upload a measurement file to preview the controls.</div></div>';
+                $("validationMessage").textContent = "Upload an ASCII measurement file to begin.";
+                $("validationTableWrap").classList.add("hidden");
+                $("currentH").textContent = "— Oe";
+                $("hIndex").textContent = "No sweep loaded";
+                $("prev").disabled = $("next").disabled = true;
+            };
+            $("validate").onclick = validate;
+            $("useFileRange").onclick = () => {
+                if (uniqueH.length) {
+                    $("minH").value = fileMinH;
+                    $("maxH").value = fileMaxH;
+                    selectH(0);
+                    validate();
+                }
+            };
+            function constrainHRange(changed) {
+                if (fileMinH === null) return;
+                let min = Number($("minH").value),
+                    max = Number($("maxH").value);
+                if (!Number.isFinite(min)) min = fileMinH;
+                if (!Number.isFinite(max)) max = fileMaxH;
+                min = Math.max(fileMinH, Math.min(fileMaxH, min));
+                max = Math.max(fileMinH, Math.min(fileMaxH, max));
+                if (min > max) {
+                    if (changed === "minH") max = min;
+                    else min = max;
+                }
+                $("minH").value = min;
+                $("maxH").value = max;
+                selectH(0);
+                validate();
+            }
+            ["minH", "maxH"].forEach((id) => $(id).addEventListener("change", () => constrainHRange(id)));
+            $("tol").addEventListener("change", validate);
+            function selectH(dir) {
+                if (!uniqueH.length) return;
+                const min = fileMinH === null ? uniqueH[0] : Number($("minH").value),
+                    max = fileMaxH === null ? uniqueH[uniqueH.length - 1] : Number($("maxH").value);
+                const rangeH = uniqueH.filter((h) => h >= min - 1e-9 && h <= max + 1e-9);
+                if (!rangeH.length) {
+                    $("currentH").textContent = "No H-DC in range";
+                    $("hIndex").textContent = "0 of 0";
+                    $("prev").disabled = $("next").disabled = true;
+                    return;
+                }
+                let cur = parseFloat($("currentH").textContent);
+                let idx = rangeH.indexOf(cur);
+                if (idx < 0) idx = dir < 0 ? rangeH.length - 1 : 0;
+                else idx = Math.max(0, Math.min(rangeH.length - 1, idx + dir));
+                $("currentH").textContent = fmt(rangeH[idx]) + " Oe";
+                $("hIndex").textContent = `${idx + 1} of ${rangeH.length}`;
+                $("prev").disabled = idx === 0;
+                $("next").disabled = idx === rangeH.length - 1;
+                if (plotMode === "raw" && typeof Plotly !== "undefined") {
+                    Plotly.restyle("plot", {
+                        opacity: data.map((p) => (p.h === rangeH[idx] ? 1 : 0.22)),
+                        selectedpoints: [data.map((p, i) => (p.h === rangeH[idx] ? i : -1)).filter((i) => i >= 0)],
+                    });
+                }
+            }
+            $("prev").onclick = () => selectH(-1);
+            $("next").onclick = () => selectH(1);
+            $("cmap").onchange = draw;
+            $("redraw").onclick = draw;
+            $("autoScale").onclick = () => {
+                $("zmin").value = "";
+                $("zmax").value = "";
+                draw();
+            };
+            $("showRaw").onclick = () => {
+                plotMode = "raw";
+                $("showRaw").classList.add("primary");
+                $("showInterpolated").classList.remove("primary");
+                draw();
+            };
+            $("showInterpolated").onclick = () => {
+                plotMode = "interpolated";
+                $("showInterpolated").classList.add("primary");
+                $("showRaw").classList.remove("primary");
+                draw();
+            };
+            function panPlot(dx, dy) {
+                if (typeof Plotly === "undefined" || !data.length) return;
+                const gd = $("plot");
+                const xr = gd._fullLayout?.xaxis?.range,
+                    yr = gd._fullLayout?.yaxis?.range;
+                if (!xr || !yr) return;
+                const xspan = xr[1] - xr[0],
+                    yspan = yr[1] - yr[0];
+                const stepX = xspan * 0.15,
+                    stepY = yspan * 0.15;
+                Plotly.relayout(gd, {
+                    "xaxis.range": [xr[0] + dx * stepX, xr[1] + dx * stepX],
+                    "yaxis.range": [yr[0] + dy * stepY, yr[1] + dy * stepY],
+                });
+            }
+            $("panLeft").onclick = () => panPlot(-1, 0);
+            $("panRight").onclick = () => panPlot(1, 0);
+            $("panUp").onclick = () => panPlot(0, 1);
+            $("panDown").onclick = () => panPlot(0, -1);
+            $("resetView").onclick = () => {
+                if (typeof Plotly !== "undefined" && data.length)
+                    Plotly.relayout("plot", { "xaxis.autorange": true, "yaxis.autorange": true });
+            };
+            $("exportPng").onclick = () => {
+                if (typeof Plotly !== "undefined" && data.length)
+                    Plotly.downloadImage("plot", {
+                        format: "png",
+                        filename: "HDC_S21_colormap",
+                        width: 1400,
+                        height: 900,
+                        scale: 2,
+                    });
+            };
+            $("exportSvg").onclick = () => {
+                if (typeof Plotly !== "undefined" && data.length) {
+                    Plotly.downloadImage("plot", {
+                        format: "svg",
+                        filename: "HDC_S21_colormap",
+                        width: 1400,
+                        height: 900,
+                    });
+                }
+            };
+            $("exportCsv").onclick = () => {
+                if (!audit.length) {
+                    validate();
+                    if (!audit.length) return;
+                }
+                const rows = [
+                    ["expected_Hdc_Oe", "status", "nearest_actual_Hdc_Oe", "absolute_difference_Oe"],
+                    ...audit.map((a) => [a.expected, a.status, a.nearest ?? "", a.distance]),
+                ];
+                const csv = rows
+                    .map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(","))
+                    .join("\r\n");
+                const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "HDC_step_audit.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        </script>
+    </body>
+</html>
